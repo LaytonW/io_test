@@ -16,4 +16,4 @@ $(BINDIR) :
 	mkdir $@
 
 clean :
-	$(RM) $(TARGETS) $(OUTPUT)
+	$(RM) -r $(BINDIR) $(OUTPUT)
