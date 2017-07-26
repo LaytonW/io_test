@@ -238,17 +238,17 @@ int main(int argc, char const *argv[]) {
     num_itrs = std::stoull(argv[3], nullptr, 10);
     if (argv[2][0] == '-')
       throw std::runtime_error("Size must be positive, given "
-                               + std::string(argv[2]));
+                               + std::string(argv[2]) + ".");
     if (argv[3][0] == '-')
       throw std::runtime_error("Number of blocks must be positive, given "
-                               + std::string(argv[3]));
+                               + std::string(argv[3]) + ".");
     if (io_method == "direct" and buffer_size % 512)
       throw std::runtime_error("For 'direct' method, size must be a multiple of"
-                               " 512 bytes, given " + std::string(argv[2]));
+                               " 512 bytes, given " + std::string(argv[2])+".");
     if (io_method == "mmap" and buffer_size % getpagesize())
-      throw std::runtime_error("For 'mmap' method, size must be a multiple of"
+      throw std::runtime_error("For 'mmap' method, size must be a multiple of "
                                + std::to_string(getpagesize())
-                               + " bytes, given " + std::string(argv[2]));
+                               + " bytes, given " + std::string(argv[2]) + ".");
   } catch (std::exception& e) {
     std::cerr << "Invalid argument:\n\t" << e.what() << std::endl;
     return EXIT_FAILURE;
