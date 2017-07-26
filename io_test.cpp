@@ -5,7 +5,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <map>
+#include <set>
 #include <chrono>
+#include <exception>
 
 #define SEC_TO_USEC 1000000.0
 
@@ -16,6 +18,12 @@ using test_func_t = std::function<const long double(const int&,
                                                     char*,
                                                     const long_size_t&,
                                                     const long_size_t&)>;
+std::set<std::string> io_methods = {
+  "simple",
+  "p",
+  "direct",
+  "mmap"
+};
 
 void generate_buffer(char *buf, const unsigned long long& buffer_size) {
     for(int j = 0; j < buffer_size; ++j) {
@@ -186,9 +194,33 @@ test_func_t test_read(const std::string& io_method) {
 }
 
 int main(int argc, char const *argv[]) {
+  if (argc != 4) {
+    std::cerr << "Usage: io_test <I/O method> <size> <num>\n"
+              << "\tI/O method: one of 'simple', 'direct', 'p', or 'mmap'\n"
+              << "\tsize: I/O block size in bytes. For 'direct' and 'mmap'"
+              << " methods,\n\t      size must be a multiple of 512 bytes.\n"
+              << "\tnum: number of blocks to write/read." << std::endl;
+    return EXIT_FAILURE;
+  }
   const auto io_method = std::string(argv[1]);
-  const auto buffer_size = std::stoull(argv[2], nullptr, 10);
-  const auto num_itrs = std::stoull(argv[3], nullptr, 10);
+  if (io_methods.find(io_method) == io_methods.end()) {
+    std::cerr << "Unknown I/O method: " << io_method << std::endl;
+    return EXIT_FAILURE;
+  }
+  long_size_t buffer_size, num_itrs;
+  try {
+    buffer_size = std::stoull(argv[2], nullptr, 10);
+    num_itrs = std::stoull(argv[3], nullptr, 10);
+    if (argv[2][0] == '-')
+      throw std::runtime_error("Size must be positive, given "
+                               + std::string(argv[2]));
+    if (argv[3][0] == '-')
+      throw std::runtime_error("Number of blocks must be positive, given "
+                               + std::string(argv[3]));
+  } catch (std::exception& e) {
+    std::cerr << "Invalid argument: " << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
   std::cout << "\n============================================="
             << "\nTesting I/O latency with " << io_method
             << "\nBuffer size: " << buffer_size
@@ -203,5 +235,5 @@ int main(int argc, char const *argv[]) {
             << "Read: " << std::fixed
             << test_read(io_method)(fd, buf, buffer_size, num_itrs) << "us"
             << "\n=============================================\n" << std::endl;
-  return 0;
+  return EXIT_SUCCESS;
 }
