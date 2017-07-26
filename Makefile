@@ -3,17 +3,17 @@ CXX := g++
 CXXFLAGS := -std=c++11 -O3 -D NDEBUG
 BINDIR := bin
 SRCDIR := .
-TARGET := $(BINDIR)/io_test
-SOURCE := $(SRCDIR)/io_test.cpp
+SOURCES := $(wildcard $(SRCDIR)/*.cpp)
+TARGETS := $(SOURCES:$(SRCDIR)/%.cpp=$(BINDIR)/%)
 OUTPUT := test_file.tmp
 
-all : $(TARGET)
+all : $(TARGETS)
 
-$(TARGET) : $(SOURCE) | $(BINDIR)
+$(BINDIR)/% : $(SRCDIR)/%.cpp | $(BINDIR)
 	$(CXX) -o $@ $^ $(CXXFLAGS)
 
 $(BINDIR) :
 	mkdir $@
 
 clean :
-	$(RM) $(TARGET) $(OUTPUT)
+	$(RM) $(TARGETS) $(OUTPUT)
