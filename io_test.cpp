@@ -4,6 +4,9 @@
 #include <malloc.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #include <map>
 #include <set>
 #include <chrono>
@@ -11,7 +14,7 @@
 
 #define SEC_TO_USEC 1000000.0
 #define CHECK_ERROR(e)                              \
-	(((e) > 0) ? (void)0 :                            \
+	(((e) >= 0) ? (void)0 :						                \
 	(std::cerr << __FILE__ << ": " << __LINE__ << ": "\
              << #e << " failed." << std::endl,      \
 	 perror(#e), exit(EXIT_FAILURE)))
@@ -40,16 +43,19 @@ int initialize_file(const std::string& io_method,
                     const char* buf,
                     const long_size_t& buffer_size,
                     const long_size_t& num_itrs) {
-  auto file_flags = O_RDWR | O_CREAT | O_SYNC;
+  auto file_flags = O_RDWR | O_SYNC;
   if (io_method == "direct")
     file_flags |= O_DIRECT;
-  int fd = open("test_file.tmp", file_flags, 0664);
-  CHECK_ERROR(fd);
+  int open_file = open("test_file.tmp", O_WRONLY | O_CREAT, 0664);
+  CHECK_ERROR(open_file);
   for (long_size_t i = 0; i < num_itrs; i++) {
-    CHECK_ERROR(write(fd, buf, buffer_size));
+    CHECK_ERROR(write(open_file, buf, buffer_size));
   }
-  CHECK_ERROR(lseek(fd, 0, SEEK_SET));
-  return fd;
+  CHECK_ERROR(fsync(open_file));
+  CHECK_ERROR(close(open_file));
+  open_file = open("test_file.tmp", file_flags);
+  CHECK_ERROR(open_file);
+  return open_file;
 }
 
 const long double test_write_simple(const int& fd,
@@ -142,14 +148,51 @@ const long double test_write_mmap(const int& fd,
                                   char* buf,
                                   const long_size_t& buffer_size,
                                   const long_size_t& num_itrs) {
-  return 0.0; // Dummy TODO
+  char* mapped;
+  CHECK_ERROR(mapped = static_cast<char*>(mmap(nullptr,
+                                               buffer_size * num_itrs,
+                                               PROT_READ | PROT_WRITE,
+                                               MAP_SHARED | MAP_POPULATE,
+                                               fd,
+                                               0)));
+  CHECK_ERROR(madvise(mapped,
+                      buffer_size * num_itrs,
+                      MADV_SEQUENTIAL | MADV_WILLNEED));
+  timepoint_t start, end;
+  start = std::chrono::system_clock::now();
+  for (long_size_t i = 0; i < num_itrs; i++) {
+    memcpy(mapped + i * buffer_size, buf, buffer_size);
+    CHECK_ERROR(msync(mapped + i * buffer_size, buffer_size, MS_SYNC));
+  }
+  end = std::chrono::system_clock::now();
+  CHECK_ERROR(munmap(mapped, buffer_size * num_itrs));
+  duration_t duration = end - start;
+  return duration.count() * SEC_TO_USEC / static_cast<long double>(num_itrs);
 }
 
 const long double test_read_mmap(const int& fd,
                                  char* buf,
                                  const long_size_t& buffer_size,
                                  const long_size_t& num_itrs) {
-  return 0.0; // Dummy TODO
+  char* mapped;
+  CHECK_ERROR(mapped = static_cast<char*>(mmap(nullptr,
+                                               buffer_size * num_itrs,
+                                               PROT_READ | PROT_WRITE,
+                                               MAP_SHARED | MAP_POPULATE,
+                                               fd,
+                                               0)));
+  CHECK_ERROR(madvise(mapped,
+                      buffer_size * num_itrs,
+                      MADV_SEQUENTIAL | MADV_WILLNEED));
+  timepoint_t start, end;
+  start = std::chrono::system_clock::now();
+  for (long_size_t i = 0; i < num_itrs; i++) {
+    memcpy(buf, mapped + i * buffer_size, buffer_size);
+  }
+  end = std::chrono::system_clock::now();
+  CHECK_ERROR(munmap(mapped, buffer_size * num_itrs));
+  duration_t duration = end - start;
+  return duration.count() * SEC_TO_USEC / static_cast<long double>(num_itrs);
 }
 
 const std::map<std::string, test_func_t> test_func_map {
@@ -175,8 +218,10 @@ int main(int argc, char const *argv[]) {
   if (argc != 4) {
     std::cerr << "Usage: io_test <I/O method> <size> <num>\n"
               << "\tI/O method: one of 'simple', 'direct', 'p', or 'mmap'\n"
-              << "\tsize: I/O block size in bytes. For 'direct' and 'mmap'"
-              << " methods,\n\t      size must be a multiple of 512 bytes.\n"
+              << "\tsize: I/O block size in bytes. For 'direct' method, size "
+              << "\n\t      must be a multiple of 512 bytes. For 'mmap' method,"
+              << "\n\t      size must be a multiple of "
+              << std::to_string(getpagesize()) << " bytes.\n"
               << "\tnum: number of blocks to write/read." << std::endl;
     return EXIT_FAILURE;
   }
@@ -195,6 +240,13 @@ int main(int argc, char const *argv[]) {
     if (argv[3][0] == '-')
       throw std::runtime_error("Number of blocks must be positive, given "
                                + std::string(argv[3]));
+    if (io_method == "direct" and buffer_size % 512)
+      throw std::runtime_error("For 'direct' method, size must be a multiple of"
+                               " 512 bytes, given " + std::string(argv[2]));
+    if (io_method == "mmap" and buffer_size % getpagesize())
+      throw std::runtime_error("For 'mmap' method, size must be a multiple of"
+                               + std::to_string(getpagesize())
+                               + " bytes, given " + std::string(argv[2]));
   } catch (std::exception& e) {
     std::cerr << "Invalid argument: " << e.what() << std::endl;
     return EXIT_FAILURE;
@@ -204,7 +256,7 @@ int main(int argc, char const *argv[]) {
             << "\nBuffer size: " << buffer_size
             << "\nNumber of repeats: " << num_itrs
             << "\n=============================================" << std::endl;
-  auto buf = (char *)memalign(buffer_size, buffer_size);
+  auto buf = static_cast<char*>(memalign(buffer_size, buffer_size));
   generate_buffer(buf, buffer_size);
   auto fd = initialize_file(io_method, buf, buffer_size, num_itrs);
 
@@ -213,5 +265,6 @@ int main(int argc, char const *argv[]) {
             << "Read: " << std::fixed
             << test_read(io_method)(fd, buf, buffer_size, num_itrs) << "us"
             << "\n=============================================\n" << std::endl;
+  CHECK_ERROR(close(fd));
   return EXIT_SUCCESS;
 }
