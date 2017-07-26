@@ -13,10 +13,10 @@
 #include <exception>
 
 #define SEC_TO_USEC 1000000.0
-#define CHECK_ERROR(e)                              \
-	(((e) >= 0) ? (void)0 :						                \
+#define CHECK_ERROR(e)\
+	(((e) >= 0) ? (void)0 :\
 	(std::cerr << __FILE__ << ": " << __LINE__ << ": "\
-             << #e << " failed." << std::endl,      \
+             << #e << " failed." << std::endl,\
 	 perror(#e), exit(EXIT_FAILURE)))
 
 using long_size_t = unsigned long long;
