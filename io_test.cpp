@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <map>
 #include <set>
 #include <chrono>
