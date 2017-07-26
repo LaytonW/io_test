@@ -10,6 +10,11 @@
 #include <exception>
 
 #define SEC_TO_USEC 1000000.0
+#define CHECK_ERROR(e)                              \
+	(((e) > 0) ? (void)0 :                            \
+	(std::cerr << __FILE__ << ": " << __LINE__ << ": "\
+             << #e << " failed." << std::endl,      \
+	 perror(#e), exit(EXIT_FAILURE)))
 
 using long_size_t = unsigned long long;
 using timepoint_t = std::chrono::time_point<std::chrono::system_clock>;
@@ -39,14 +44,11 @@ int initialize_file(const std::string& io_method,
   if (io_method == "direct")
     file_flags |= O_DIRECT;
   int fd = open("test_file.tmp", file_flags, 0664);
+  CHECK_ERROR(fd);
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (write(fd, buf, buffer_size) < 0) {
-      std::cerr << "Write failed." << std::endl;
-      perror("Write");
-      exit(-1);
-    }
+    CHECK_ERROR(write(fd, buf, buffer_size));
   }
-  lseek(fd, 0, SEEK_SET);
+  CHECK_ERROR(lseek(fd, 0, SEEK_SET));
   return fd;
 }
 
@@ -57,11 +59,7 @@ const long double test_write_simple(const int& fd,
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (write(fd, buf, buffer_size) < 0) {
-      std::cerr << "Write failed." << std::endl;
-      perror("test_write_simple");
-      exit(-1);
-    }
+    CHECK_ERROR(write(fd, buf, buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
@@ -72,15 +70,11 @@ const long double test_read_simple(const int& fd,
                                    char* buf,
                                    const long_size_t& buffer_size,
                                    const long_size_t& num_itrs) {
-  lseek(fd, 0, SEEK_SET);
+  CHECK_ERROR(lseek(fd, 0, SEEK_SET));
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (read(fd, buf, buffer_size) < 0) {
-      std::cerr << "Read failed." << std::endl;
-      perror("test_read_simple");
-      exit(-1);
-    }
+    CHECK_ERROR(read(fd, buf, buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
@@ -94,11 +88,7 @@ const long double test_write_direct(const int& fd,
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (write(fd, buf, buffer_size) < 0) {
-      std::cerr << "Write failed." << std::endl;
-      perror("test_write_direct");
-      exit(-1);
-    }
+    CHECK_ERROR(write(fd, buf, buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
@@ -109,15 +99,11 @@ const long double test_read_direct(const int& fd,
                                    char* buf,
                                    const long_size_t& buffer_size,
                                    const long_size_t& num_itrs) {
-  lseek(fd, 0, SEEK_SET);
+  CHECK_ERROR(lseek(fd, 0, SEEK_SET));
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (read(fd, buf, buffer_size) < 0) {
-      std::cerr << "Read failed." << std::endl;
-      perror("test_read_direct");
-      exit(-1);
-    }
+    CHECK_ERROR(read(fd, buf, buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
@@ -131,11 +117,7 @@ const long double test_write_p(const int& fd,
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (pwrite(fd, buf, buffer_size, i * buffer_size) < 0) {
-      std::cerr << "Write failed." << std::endl;
-      perror("test_write_p");
-      exit(-1);
-    }
+    CHECK_ERROR(pwrite(fd, buf, buffer_size, i * buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
@@ -149,11 +131,7 @@ const long double test_read_p(const int& fd,
   timepoint_t start, end;
   start = std::chrono::system_clock::now();
   for (long_size_t i = 0; i < num_itrs; i++) {
-    if (pread(fd, buf, buffer_size, i * buffer_size) < 0) {
-      std::cerr << "Read failed." << std::endl;
-      perror("test_read_p");
-      exit(-1);
-    }
+    CHECK_ERROR(pread(fd, buf, buffer_size, i * buffer_size));
   }
   end = std::chrono::system_clock::now();
   duration_t duration = end - start;
