@@ -159,14 +159,14 @@ const long double test_write_mmap(const int& fd,
                                   char* buf,
                                   const long_size_t& buffer_size,
                                   const long_size_t& num_itrs) {
-  //
+  return 0.0; // Dummy TODO
 }
 
 const long double test_read_mmap(const int& fd,
                                  char* buf,
                                  const long_size_t& buffer_size,
                                  const long_size_t& num_itrs) {
-  //
+  return 0.0; // Dummy TODO
 }
 
 std::map<std::string, test_func_t> test_func_map {
