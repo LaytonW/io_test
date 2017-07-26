@@ -43,9 +43,11 @@ int initialize_file(const std::string& io_method,
                     const char* buf,
                     const long_size_t& buffer_size,
                     const long_size_t& num_itrs) {
-  auto file_flags = O_RDWR | O_SYNC;
+  auto file_flags = O_RDWR;
   if (io_method == "direct")
     file_flags |= O_DIRECT;
+  else
+    file_flags |= O_SYNC;
   int open_file = open("test_file.tmp", O_WRONLY | O_CREAT, 0664);
   CHECK_ERROR(open_file);
   for (long_size_t i = 0; i < num_itrs; i++) {
