@@ -1,13 +1,10 @@
-#include <cstdio>
-#include <fcntl.h>
-#include <fstream>
 #include <iostream>
-#include <malloc.h>
-#include <map>
-#include <memory>
-#include <unistd.h>
-#include <vector>
 #include <iomanip>
+#include <memory>
+#include <malloc.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <map>
 #include <chrono>
 
 #define SEC_TO_USEC 1000000.0
