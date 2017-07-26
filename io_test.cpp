@@ -18,7 +18,7 @@ using test_func_t = std::function<const long double(const int&,
                                                     char*,
                                                     const long_size_t&,
                                                     const long_size_t&)>;
-std::set<std::string> io_methods = {
+const std::set<std::string> io_methods = {
   "simple",
   "p",
   "direct",
@@ -174,7 +174,7 @@ const long double test_read_mmap(const int& fd,
   return 0.0; // Dummy TODO
 }
 
-std::map<std::string, test_func_t> test_func_map {
+const std::map<std::string, test_func_t> test_func_map {
   {"simple_write", test_func_t(test_write_simple)},
   {"simple_read", test_func_t(test_read_simple)},
   {"direct_write", test_func_t(test_write_direct)},
@@ -186,11 +186,11 @@ std::map<std::string, test_func_t> test_func_map {
 };
 
 test_func_t test_write(const std::string& io_method) {
-  return test_func_map[io_method + "_write"];
+  return test_func_map.at(io_method + "_write");
 }
 
 test_func_t test_read(const std::string& io_method) {
-  return test_func_map[io_method + "_read"];
+  return test_func_map.at(io_method + "_read");
 }
 
 int main(int argc, char const *argv[]) {
