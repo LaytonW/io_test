@@ -248,7 +248,7 @@ int main(int argc, char const *argv[]) {
                                + std::to_string(getpagesize())
                                + " bytes, given " + std::string(argv[2]));
   } catch (std::exception& e) {
-    std::cerr << "Invalid argument: " << e.what() << std::endl;
+    std::cerr << "Invalid argument:\n\t" << e.what() << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << "\n============================================="
