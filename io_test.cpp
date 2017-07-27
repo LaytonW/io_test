@@ -47,7 +47,7 @@ int initialize_file(const std::string& io_method,
     file_flags |= O_DIRECT;
   else
     file_flags |= O_SYNC;
-  int open_file = open("test_file.tmp", O_WRONLY | O_CREAT, 0664);
+  int open_file = open("test_file.tmp", O_WRONLY | O_CREAT | O_TRUNC, 0664);
   CHECK_ERROR(open_file);
   for (long_size_t i = 0; i < num_itrs; i++) {
     CHECK_ERROR(write(open_file, buf, buffer_size));
