@@ -1,5 +1,4 @@
 .PHONY : all clean test testsimple testp testdirect testmmap
-CXX := g++
 CXXFLAGS := -std=c++11 -O3 -D NDEBUG
 BINDIR := bin
 SRCDIR := .
