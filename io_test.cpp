@@ -33,9 +33,9 @@ const std::set<std::string> io_methods = {
 };
 
 void generate_buffer(char *buf, const unsigned long long& buffer_size) {
-    for(int j = 0; j < buffer_size; ++j) {
-        buf[j] = 'a' + (j % 26);
-    }
+  for(int j = 0; j < buffer_size; ++j) {
+    buf[j] = 'a' + (j % 26);
+  }
 }
 
 int initialize_file(const std::string& io_method,
