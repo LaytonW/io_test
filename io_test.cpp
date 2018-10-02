@@ -14,7 +14,7 @@
 
 #define SEC_TO_USEC 1000000.0
 #define CHECK_ERROR(e)\
-	(((e) >= 0) ? (void)0 :\
+	(((long)(e) >= 0) ? (void)0 :\
 	(std::cerr << __FILE__ << ": " << __LINE__ << ": "\
              << #e << " failed." << std::endl,\
 	 perror(#e), exit(EXIT_FAILURE)))
