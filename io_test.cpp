@@ -10,6 +10,7 @@
 #include <set>
 #include <chrono>
 #include <exception>
+#include <functional>
 
 #define SEC_TO_USEC 1000000.0
 #define CHECK_ERROR(e)\
